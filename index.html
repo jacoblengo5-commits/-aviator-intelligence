@@ -1,0 +1,152 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aviator Intelligence</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#090b10;color:#fff;font-family:Arial,sans-serif;padding:18px}
+header{text-align:center;padding:20px 0}
+h1{color:#ff303c;letter-spacing:2px}
+small{color:#9299a8}
+.card{background:#151923;border:1px solid #292e3b;border-radius:15px;padding:17px;margin:14px 0}
+.multiplier{font-size:42px;color:#ff3945;font-weight:bold;text-align:center;padding:15px}
+input{width:100%;padding:15px;background:#090d14;color:white;border:1px solid #41495a;border-radius:9px;font-size:17px}
+button{width:100%;padding:14px;border:0;border-radius:9px;background:#ed2638;color:white;font-weight:bold;margin-top:12px;font-size:16px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.stat{background:#202635;padding:15px;border-radius:10px}
+.stat strong{display:block;font-size:23px;color:#ff4b55;margin-top:8px}
+.green{color:#36d69b}
+.history{display:flex;flex-wrap:wrap;gap:8px}
+.pill{background:#272e3d;padding:9px 12px;border-radius:8px}
+footer{text-align:center;color:#777;margin:25px 0;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+<h1>✈ AVIATOR</h1>
+<strong>INTELLIGENCE</strong><br>
+<small>STATISTICAL ANALYSIS SYSTEM V1.0</small>
+</header>
+
+<div class="card">
+<small>ANALYSIS STATUS</small>
+<div class="multiplier" id="latest">--</div>
+<p style="text-align:center" id="status">Waiting for recorded results</p>
+</div>
+
+<div class="card">
+<h3>Record actual round</h3>
+<input id="result" type="number" min="1" step="0.01" placeholder="Enter multiplier e.g. 2.45">
+<button onclick="addRound()">SAVE ROUND</button>
+<small>Enter the actual result shown by your game.</small>
+</div>
+
+<div class="card">
+<h3>Historical statistics</h3>
+<div class="stats">
+<div class="stat">Total rounds<strong id="total">0</strong></div>
+<div class="stat">Average<strong id="average">--</strong></div>
+<div class="stat">Highest<strong id="highest">--</strong></div>
+<div class="stat">Above 2x<strong id="above">0%</strong></div>
+</div>
+</div>
+
+<div class="card">
+<h3>Historical analysis</h3>
+<p id="analysis">Record rounds to begin analysis.</p>
+<small>These statistics describe past results, not the next crash.</small>
+</div>
+
+<div class="card">
+<h3>Recent rounds</h3>
+<div class="history" id="history">No recorded rounds</div>
+<button onclick="clearRounds()" style="background:#454b59">CLEAR HISTORY</button>
+</div>
+
+<footer>
+AVIATOR INTELLIGENCE<br>
+Independent statistical tool · No guaranteed predictions
+</footer>
+
+<script>
+let rounds = JSON.parse(localStorage.getItem("aviatorRounds") || "[]");
+
+function save(){
+ localStorage.setItem("aviatorRounds",JSON.stringify(rounds));
+ render();
+}
+
+function addRound(){
+ const field=document.getElementById("result");
+ const value=Number(field.value);
+
+ if(!Number.isFinite(value)||value<1){
+  alert("Enter a valid multiplier of at least 1.00");
+  return;
+ }
+
+ rounds.unshift({
+  value:Number(value.toFixed(2)),
+  time:new Date().toISOString()
+ });
+
+ rounds=rounds.slice(0,500);
+ field.value="";
+ save();
+}
+
+function render(){
+ const values=rounds.map(r=>r.value);
+ const total=values.length;
+
+ document.getElementById("total").textContent=total;
+ document.getElementById("latest").textContent=
+  total?values[0].toFixed(2)+"x":"--";
+
+ document.getElementById("status").textContent=
+  total?"Latest manually recorded result":"Waiting for recorded results";
+
+ if(!total){
+  document.getElementById("average").textContent="--";
+  document.getElementById("highest").textContent="--";
+  document.getElementById("above").textContent="0%";
+  document.getElementById("analysis").textContent=
+   "Record rounds to begin analysis.";
+  document.getElementById("history").textContent="No recorded rounds";
+  return;
+ }
+
+ const average=values.reduce((a,b)=>a+b,0)/total;
+ const highest=Math.max(...values);
+ const above=values.filter(v=>v>=2).length;
+
+ document.getElementById("average").textContent=average.toFixed(2)+"x";
+ document.getElementById("highest").textContent=highest.toFixed(2)+"x";
+ document.getElementById("above").textContent=
+  (above/total*100).toFixed(1)+"%";
+
+ document.getElementById("analysis").textContent=
+  total+" recorded rounds. "+above+
+  " rounds ("+(above/total*100).toFixed(1)+
+  "%) reached at least 2x. Historical frequency does not predict the next round.";
+
+ document.getElementById("history").innerHTML=
+  values.slice(0,30).map(v=>
+   '<span class="pill">'+v.toFixed(2)+'x</span>'
+  ).join("");
+}
+
+function clearRounds(){
+ if(confirm("Delete all saved round history?")){
+  rounds=[];
+  save();
+ }
+}
+
+render();
+</script>
+</body>
+</html>
